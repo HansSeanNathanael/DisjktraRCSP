@@ -9,72 +9,66 @@ struct Data {
     Data(int cost, int next, int prev) : cost(cost), next(next), prev(prev) {}
 };
 
-struct DataComparator {
-    bool operator()(const Data& d1, const Data& d2) {
-        return d2.cost < d1.cost;
-    }
-};
-
 pair<vector<int>, vector<int>> path(const vector<int>& constraint, vector<unordered_map<int, vector<int>>> edges, int source, int destination) {
     vector<int> path(edges.size(), -1);
-    vector<vector<int>> costs(edges.size(), vector<int>(constraint.size()));
+    vector<vector<int>> costs(edges.size(), vector<int>(constraint.size(), INT_MAX));
     vector<bool> visited(edges.size(), false);
 
+    // menghapus semua edge yang menuju ke node awal (source)
     for (int i = 0; i < edges.size(); i++) {
         const auto& it = edges[i].find(source);
         if (it != edges[i].end()) {
             edges[i].erase(it);
         }
     }
+
+    // menghapus semua edge yang berasal dari node akhir (destination)
     edges[destination].clear();
 
-    priority_queue<Data, vector<Data>, DataComparator> pque;
-    pque.push(Data(0, source, -1));
+    int previouslyVisited = source;
+    visited[previouslyVisited] = true;
+    fill(&costs[source][0], &costs[source][0] + constraint.size(), 0);
 
-    while(!visited[destination] && !pque.empty()) {
-        Data current = pque.top();
-        pque.pop();
+    while(!visited[destination]) {
 
-        if (!visited[current.next]) {
-            visited[current.next] = true;
-            path[current.next] = current.prev;
+        int nextNode = -1;
+        for (int i = 0; i < costs.size(); i++) {
 
-            if (current.prev != -1) {
-                vector<int> edgesCost = edges[current.prev].find(current.next)->second;
-                for (int i = 0; i < constraint.size(); i++) {
-                    costs[current.next][i] = costs[current.prev][i] + edgesCost[i];
-                }
-            }
+            if (!visited[i]) {
+                bool resourceMet = true;
 
-//            cout << "Node: " << current.next << " ";
-//            for (int i = 0; i < constraint.size(); i++) {
-//                cout << costs[current.next][i] << " ";
-//            }
-//            cout << endl;
+                unordered_map<int, vector<int>>::iterator it = edges[previouslyVisited].find(i);
 
-            for (int i = 0; i < edges.size(); i++) {
-                const auto& it = edges[i].find(current.next);
-                if (it != edges[i].end()) {
-                    edges[i].erase(it);
-                }
-            }
-//            if (current.next == 2) {
-//                cout << 2 << " " << edges[current.next].size() << endl;
-//            }
+                if (it != edges[previouslyVisited].end()) {
 
-            for (pair<const int, vector<int>>& it : edges[current.next]) {
-                bool compatible = true;
-                for (int i = 1; i < constraint.size(); i++) {
-                    if (costs[current.next][i] + it.second[i] > constraint[i]) {
-                        compatible = false;
+                    vector<int> newCost = costs[previouslyVisited];
+
+                    for (int j = 0; j < it->second.size(); j++) {
+                        newCost[j] += it->second[j];
+                        if (j > 0 && newCost[j] > constraint[j]) {
+                            resourceMet = false;
+                        }
+                    }
+
+                    if (costs[i][0] == INT_MAX || (costs[i][0] > newCost[0] && resourceMet)) {
+                        costs[i] = newCost;
+                        path[i] = previouslyVisited;
                     }
                 }
-//                if (current.next == 1) {
-//                    cout << "TES: " << 1 << " " << it.first << " " << compatible << endl;
-//                }
-                if (compatible) {
-                    pque.push(Data(costs[current.next][0] + it.second[0], it.first, current.next));
+
+                if (nextNode == -1 || costs[i][0] < costs[nextNode][0]) {
+                    nextNode = i;
                 }
+            }
+        }
+
+        visited[nextNode] = true;
+        previouslyVisited = nextNode;
+
+        for (int i = 0; i < edges.size(); i++) {
+            const auto& it = edges[i].find(previouslyVisited);
+            if (it != edges[i].end()) {
+                edges[i].erase(it);
             }
         }
     }
@@ -93,7 +87,7 @@ pair<vector<int>, vector<int>> path(const vector<int>& constraint, vector<unorde
 
 int main() {
 //    const vector<int>& constraint, vector<unordered_map<int, vector<int>>> edges, int source, int destination
-    vector<int> constraint = {0, 11};
+    vector<int> constraint = {0, 10};
     vector<unordered_map<int, vector<int>>> edges({
         unordered_map<int, vector<int>>({
             {1, vector<int>({11,4})},
