@@ -1,34 +1,25 @@
 #include "bits/stdc++.h"
 using namespace std;
 
-pair<vector<int>, vector<int>> path(const vector<int>& constraint, vector<unordered_map<int, vector<int>>> edges, vector<vector<int>> connector, int source, int destination) {
+pair<vector<int>, vector<int>> path(const vector<int>& constraint, vector<unordered_map<int, vector<int>>> edges, int source, int destination) {
     vector<int> path(edges.size(), -1);
     vector<vector<int>> costs(edges.size(), vector<int>(constraint.size(), INT_MAX));
     vector<bool> visited(edges.size(), false);
-    unordered_map<int, vector<int>>::iterator it;
     int iteration = 0;
 
-    // menghapus semua edge yang menuju ke node awal (source)
-    for (int i = 0; i < connector[source].size(); i++) {
-        iteration++;
-        edges[connector[source][i]].erase(edges[connector[source][i]].find(source));
-    }
-
-    // menghapus semua edge yang berasal dari node akhir (destination)
-    edges[destination].clear();
-
+    int totalVisited = 0;
     int previouslyVisited = source;
     visited[previouslyVisited] = true;
     fill(&costs[source][0], &costs[source][0] + constraint.size(), 0);
 
-    while(!visited[destination]) {
+    while(totalVisited < visited.size()) {
 
         int nextNode = -1;
         for (int i = 0; i < visited.size(); i++) {
 
             bool resourceMet = true;
 
-            it = edges[previouslyVisited].find(i);
+            unordered_map<int, vector<int>>::iterator it = edges[previouslyVisited].find(i);
 
             if (it != edges[previouslyVisited].end()) {
                 iteration++;
@@ -52,15 +43,10 @@ pair<vector<int>, vector<int>> path(const vector<int>& constraint, vector<unorde
             }
         }
 
-        visited[nextNode] = true;
-        previouslyVisited = nextNode;
-
-        for (int i = 0; i < connector[previouslyVisited].size(); i++) {
-            iteration++;
-            it = edges[connector[previouslyVisited][i]].find(previouslyVisited);
-            if (it != edges[connector[previouslyVisited][i]].end()) {
-                edges[connector[previouslyVisited][i]].erase(it);
-            }
+        totalVisited++;
+        if (nextNode != -1) {
+            visited[nextNode] = true;
+            previouslyVisited = nextNode;
         }
     }
 
@@ -94,7 +80,6 @@ int main() {
 
     vector<int> constraint(constraint_count + 1);
     vector<unordered_map<int, vector<int>>> edges(vertex_count);
-    vector<vector<int>> connector(vertex_count);
 
     for (int i = 0; i < edge_count; i++) {
         int awal, akhir;
@@ -108,7 +93,6 @@ int main() {
         }
 
         edges[awal].insert({akhir, costs});
-        connector[akhir].push_back(awal);
     }
 
     for (int i = 1; i < constraint_count + 1; i++) {
@@ -121,7 +105,7 @@ int main() {
     fscanf(file_input, "%d %d", &start, &destination);
 
 
-    pair<vector<int>, vector<int>> result = path(constraint, edges, connector, start, destination);
+    pair<vector<int>, vector<int>> result = path(constraint, edges, start, destination);
     cout << "Path: ";
     for (int i = 0; i < result.second.size(); i++) {
         cout << result.second[i] << " ";
