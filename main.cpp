@@ -10,18 +10,19 @@ pair<vector<int>, vector<int>> path(const vector<int>& constraint, vector<unorde
 
     // menghapus semua edge yang menuju ke node awal (source)
     for (int i = 0; i < connector[source].size(); i++) {
-        iteration++;
         edges[connector[source][i]].erase(edges[connector[source][i]].find(source));
     }
 
     // menghapus semua edge yang berasal dari node akhir (destination)
     edges[destination].clear();
 
+    int totalVisited = 1;
     int previouslyVisited = source;
     visited[previouslyVisited] = true;
     fill(&costs[source][0], &costs[source][0] + constraint.size(), 0);
 
-    while(!visited[destination]) {
+//    while(!visited[destination]) {
+    while(totalVisited < visited.size()) {
 
         int nextNode = -1;
         for (int i = 0; i < visited.size(); i++) {
@@ -52,11 +53,13 @@ pair<vector<int>, vector<int>> path(const vector<int>& constraint, vector<unorde
             }
         }
 
-        visited[nextNode] = true;
-        previouslyVisited = nextNode;
+        totalVisited++;
+        if (nextNode != -1) {
+            visited[nextNode] = true;
+            previouslyVisited = nextNode;
+        }
 
         for (int i = 0; i < connector[previouslyVisited].size(); i++) {
-            iteration++;
             it = edges[connector[previouslyVisited][i]].find(previouslyVisited);
             if (it != edges[connector[previouslyVisited][i]].end()) {
                 edges[connector[previouslyVisited][i]].erase(it);
